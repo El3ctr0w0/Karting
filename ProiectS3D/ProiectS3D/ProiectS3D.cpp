@@ -366,7 +366,7 @@ int main()
 	// Create camera
 	pCamera = new Camera(SCR_WIDTH, SCR_HEIGHT, glm::vec3(0.0, 0.0, 3.0));
 
-	glm::vec3 lightPos(0.0f, 2.0f, 1.0f);
+	glm::vec3 lightPos(0.0f, 100.0f, 0.0f);
 
 	wchar_t buffer[MAX_PATH];
 	GetCurrentDirectoryW(MAX_PATH, buffer);
