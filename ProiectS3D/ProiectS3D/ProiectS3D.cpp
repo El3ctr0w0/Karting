@@ -1,4 +1,4 @@
-// ViewOBJModel.cpp : This file contains the 'main' function. Program execution begins and ends there.
+﻿// ViewOBJModel.cpp : This file contains the 'main' function. Program execution begins and ends there.
 
 #include <Windows.h>
 #include <locale>
@@ -30,6 +30,14 @@
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
+enum CameraMode {
+	SPECTATOR,
+	THIRD_PERSON
+};
+
+CameraMode cameraMode = SPECTATOR;
+
+
 enum ECameraMovementType
 {
 	UNKNOWN,
@@ -57,6 +65,20 @@ public:
 	{
 		startPosition = position;
 		Set(width, height, position);
+	}
+
+	void LockToTarget(glm::vec3 targetPosition, glm::vec3 offset) {
+		glm::vec3 offsetPosition = targetPosition - offset;
+		position = offsetPosition;
+		// Asigură-te că forward vectorul camerei se uită înspre mașină
+		forward = glm::normalize(targetPosition - position);
+		UpdateCameraVectors();
+	}
+
+
+	void Unlock() {
+		// Resetează camera la comportamentul standard
+		Reset(SCR_WIDTH, SCR_HEIGHT);
 	}
 
 	void Set(const int width, const int height, const glm::vec3& position)
@@ -189,7 +211,7 @@ private:
 		//std::cout << "yaw = " << yaw << std::endl;
 		//std::cout << "pitch = " << pitch << std::endl;
 
-		// Avem grij� s� nu ne d�m peste cap
+		// Avem grijă să nu ne dăm peste cap
 		if (constrainPitch) {
 			if (pitch > 89.0f)
 				pitch = 89.0f;
@@ -197,7 +219,7 @@ private:
 				pitch = -89.0f;
 		}
 
-		// Se modific� vectorii camerei pe baza unghiurilor Euler
+		// Se modifică vectorii camerei pe baza unghiurilor Euler
 		UpdateCameraVectors();
 	}
 
@@ -240,11 +262,13 @@ protected:
 };
 
 GLuint ProjMatrixLocation, ViewMatrixLocation, WorldMatrixLocation;
+Model* masinaModel = nullptr;
 Camera* pCamera = nullptr;
 
 void Cleanup()
 {
 	delete pCamera;
+	delete masinaModel;
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -258,10 +282,21 @@ double lastFrame = 0.0f;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	if (key == GLFW_KEY_A && action == GLFW_PRESS) {
-
+	if (key == GLFW_KEY_V && action == GLFW_PRESS) {
+		if (cameraMode == SPECTATOR) {
+			cameraMode = THIRD_PERSON;
+			// Blochează camera în spatele și deasupra mașinii
+			glm::vec3 cameraOffset = glm::vec3(0, -20, -50); // Modifică aceste valori dacă este necesar
+			pCamera->LockToTarget(masinaModel->GetPosition() + glm::vec3(0, 0, -cameraOffset.z), cameraOffset); // Offset-ul camerei relativ la mașină
+		}
+		else {
+			cameraMode = SPECTATOR;
+			pCamera->Unlock();
+		}
 	}
 }
+
+
 
 int main()
 {
@@ -383,8 +418,7 @@ int main()
 	//std::string hartaObjFileName = (currentPath + "\\Models\\Harta.obj");
 	// Model hartaModel(hartaObjFileName, false);
 
-	std::string masinaObjFileName = (currentPath + "\\Models\\F1LowPoly.obj");
-	Model masinaModel(masinaObjFileName, false);
+	masinaModel = new Model(currentPath + "\\Models\\F1LowPoly.obj", false);
 
 	// render loop
 	while (!glfwWindowShouldClose(window)) {
@@ -420,9 +454,10 @@ int main()
 		//lightingShader.setMat4("model", hartaModelMatrix);
 		//hartaModel.Draw(lightingShader);
 
-		glm::mat4 masinaModelMatrix = glm::mat4(1.0f);
+		glm::mat4 masinaModelMatrix = masinaModel->GetTransformMatrix();
 		lightingShader.setMat4("model", masinaModelMatrix);
-		masinaModel.Draw(lightingShader);
+		masinaModel->Draw(lightingShader);
+
 
 		// also draw the lamp object
 		lampShader.use();
@@ -456,18 +491,38 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		pCamera->ProcessKeyboard(FORWARD, (float)deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		pCamera->ProcessKeyboard(BACKWARD, (float)deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		pCamera->ProcessKeyboard(LEFT, (float)deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		pCamera->ProcessKeyboard(RIGHT, (float)deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
-		pCamera->ProcessKeyboard(UP, (float)deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
-		pCamera->ProcessKeyboard(DOWN, (float)deltaTime);
+	// Diferențiem controlul camerei pe baza modului curent
+	if (cameraMode == SPECTATOR) {
+		// Controalele standard pentru modul Spectator
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+			pCamera->ProcessKeyboard(FORWARD, (float)deltaTime);
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+			pCamera->ProcessKeyboard(BACKWARD, (float)deltaTime);
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+			pCamera->ProcessKeyboard(LEFT, (float)deltaTime);
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+			pCamera->ProcessKeyboard(RIGHT, (float)deltaTime);
+		if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
+			pCamera->ProcessKeyboard(UP, (float)deltaTime);
+		if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+			pCamera->ProcessKeyboard(DOWN, (float)deltaTime);
+	}
+	else if (cameraMode == THIRD_PERSON) {
+		// În modul Third Person, controlăm mașina, dar camera rămâne fixată
+		glm::vec3 movementDirection = glm::vec3(0.0f);
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+			movementDirection += glm::vec3(0.0f, 0.0f, -1.0f); // Presupunem că aceste direcții sunt corecte pentru mișcarea mașinii
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+			movementDirection += glm::vec3(0.0f, 0.0f, 1.0f);
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+			movementDirection += glm::vec3(-1.0f, 0.0f, 0.0f);
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+			movementDirection += glm::vec3(1.0f, 0.0f, 0.0f);
+
+		// Actualizăm poziția mașinii în funcție de intrările de la tastatură
+		masinaModel->UpdatePosition(movementDirection * (float)deltaTime);
+		pCamera->LockToTarget(masinaModel->GetPosition(), glm::vec3(0, 2, -5));
+	}
 
 	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
 		int width, height;
@@ -475,6 +530,7 @@ void processInput(GLFWwindow* window)
 		pCamera->Reset(width, height);
 	}
 }
+
 
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -493,5 +549,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yOffset)
 {
-	pCamera->ProcessMouseScroll((float)yOffset);
+	if (cameraMode == SPECTATOR) 
+		pCamera->ProcessMouseScroll((float)yOffset);
 }

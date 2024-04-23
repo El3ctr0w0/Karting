@@ -18,6 +18,10 @@ public:
     string directory;
     bool gammaCorrection;
 
+    void UpdatePosition(const glm::vec3& direction);
+    
+    glm::mat4 GetTransformMatrix() const;
+    glm::vec3 GetPosition() const { return Position; }
     // constructor, expects a filepath to a 3D model.
     Model(string const& path, bool bSmoothNormals, bool gamma = false);
 
@@ -27,7 +31,7 @@ public:
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(string const& path, bool bSmoothNormals);
-
+    glm::vec3 Position;
     // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
     void processNode(aiNode* node, const aiScene* scene);
 

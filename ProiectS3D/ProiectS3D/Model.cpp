@@ -209,3 +209,18 @@ unsigned int TextureFromFile(const char* path, const string& directory, bool gam
 
     return textureID;
 }
+
+void Model::UpdatePosition(const glm::vec3& direction)
+{
+    Position += direction;
+}
+
+glm::mat4 Model::GetTransformMatrix() const
+{
+    glm::mat4 transform = glm::mat4(1.0f);
+    transform = glm::translate(transform, Position);
+
+    // transform = glm::rotate(transform, glm::radians(RotationAngle), RotationAxis);
+
+    return transform;
+}
