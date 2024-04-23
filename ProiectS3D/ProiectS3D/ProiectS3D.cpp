@@ -50,7 +50,7 @@ enum ECameraMovementType
 };
 
 float deltaYaw = 90.0f;
-float deltaPitch = 0.0f; 
+float deltaPitch = -10.0f; 
 
 class Camera
 {
@@ -78,6 +78,7 @@ public:
 
 		// Apply rotation changes based on input
 		yaw = deltaYaw;
+		pitch = deltaPitch;
 
 		// Recalculate forward vector
 		glm::vec3 front;
