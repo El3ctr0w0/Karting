@@ -15,6 +15,7 @@ public:
     // model data 
     vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     vector<Mesh>    meshes;
+    glm::vec3 Rotation;
     string directory;
     bool gammaCorrection;
 
@@ -24,6 +25,8 @@ public:
     glm::vec3 GetPosition() const { return Position; }
     // constructor, expects a filepath to a 3D model.
     Model(string const& path, bool bSmoothNormals, bool gamma = false);
+    void Rotate(float angle, glm::vec3 axis);
+    
 
     // draws the model, and thus all its meshes
     void Draw(Shader& shader);

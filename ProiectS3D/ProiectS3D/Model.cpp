@@ -10,6 +10,11 @@ Model::Model(string const& path, bool bSmoothNormals, bool gamma) : gammaCorrect
     loadModel(path, bSmoothNormals);
 }
 
+void Model::Rotate(float angle, glm::vec3 axis)
+{ 
+   Rotation += angle * axis;  // Increment rotation angles   
+}
+
 void Model::Draw(Shader& shader)
 {
     for (unsigned int i = 0; i < meshes.size(); i++)
@@ -219,6 +224,9 @@ glm::mat4 Model::GetTransformMatrix() const
 {
     glm::mat4 transform = glm::mat4(1.0f);
     transform = glm::translate(transform, Position);
+    transform = glm::rotate(transform, glm::radians(Rotation.x), glm::vec3(1, 0, 0));
+    transform = glm::rotate(transform, glm::radians(Rotation.y), glm::vec3(0, 1, 0));
+    transform = glm::rotate(transform, glm::radians(Rotation.z), glm::vec3(0, 0, 1));
 
     // transform = glm::rotate(transform, glm::radians(RotationAngle), RotationAxis);
 

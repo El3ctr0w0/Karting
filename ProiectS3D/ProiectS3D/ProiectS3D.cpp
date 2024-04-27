@@ -432,8 +432,8 @@ int main()
 	Shader lightingShader((currentPath + "\\Shaders\\PhongLight.vs").c_str(), (currentPath + "\\Shaders\\PhongLight.fs").c_str());
 	Shader lampShader((currentPath + "\\Shaders\\Lamp.vs").c_str(), (currentPath + "\\Shaders\\Lamp.fs").c_str());
 
-	//std::string hartaObjFileName = (currentPath + "\\Models\\Harta.obj");
-	// Model hartaModel(hartaObjFileName, false);
+	std::string hartaObjFileName = (currentPath + "\\Models\\Harta.obj");
+	 Model hartaModel(hartaObjFileName, false);
 
 	masinaModel = new Model(currentPath + "\\Models\\F1LowPoly.obj", false);
 
@@ -467,9 +467,9 @@ int main()
 		//lightingShader.setMat4("model", model);
 		//objModel.Draw(lightingShader);
 
-		//glm::mat4 hartaModelMatrix = glm::mat4(1.0f); 
-		//lightingShader.setMat4("model", hartaModelMatrix);
-		//hartaModel.Draw(lightingShader);
+		glm::mat4 hartaModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -25.5f, 0.0f));
+		lightingShader.setMat4("model", hartaModelMatrix);
+		hartaModel.Draw(lightingShader);
 
 		glm::mat4 masinaModelMatrix = masinaModel->GetTransformMatrix();
 		lightingShader.setMat4("model", masinaModelMatrix);
@@ -528,17 +528,18 @@ void processInput(GLFWwindow* window)
 		// În modul Third Person, controlăm mașina, dar camera rămâne fixată
 		glm::vec3 movementDirection = glm::vec3(0.0f);
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-			movementDirection += glm::vec3(0.0f, 0.0f, -1.0f); // Presupunem că aceste direcții sunt corecte pentru mișcarea mașinii
+			movementDirection += glm::vec3(0.0f, 0.0f, 5.0f); // Presupunem că aceste direcții sunt corecte pentru mișcarea mașinii
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-			movementDirection += glm::vec3(0.0f, 0.0f, 1.0f);
-		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-			movementDirection += glm::vec3(-1.0f, 0.0f, 0.0f);
-		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-			movementDirection += glm::vec3(1.0f, 0.0f, 0.0f);
-
+			movementDirection += glm::vec3(0.0f, 0.0f, -5.0f);
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+			masinaModel->Rotate(90.0f * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));  // Rotate left
+		}
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+			masinaModel->Rotate(-90.0f * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate right
+		}
 		// Actualizăm poziția mașinii în funcție de intrările de la tastatură
 		masinaModel->UpdatePosition(movementDirection * (float)deltaTime);
-		pCamera->LockToTarget(masinaModel->GetPosition(), glm::vec3(0, 2, -5));
+		pCamera->LockToTarget(masinaModel->GetPosition(), glm::vec3(0, 2, -10));
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
