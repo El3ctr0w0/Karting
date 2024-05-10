@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\_external\stb;..\_external\glm;..\_external\glfw;..\_external\GLEW;$(IncludePath)</IncludePath>
+    <IncludePath>..\_external\learnopengl;..\_external\stb;..\_external\glm;..\_external\glfw;..\_external\GLEW;$(IncludePath)</IncludePath>
     <LibraryPath>..\_external\GLEW\x64;..\_external\GLFW\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

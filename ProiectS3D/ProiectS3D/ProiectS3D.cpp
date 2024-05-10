@@ -10,9 +10,12 @@
 
 #include <GL/glew.h>
 
+#include <filesystem.h>
 #include <GLM.hpp>
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
+
+#include<stb_image.h>
 
 #include <glfw3.h>
 
@@ -29,6 +32,8 @@
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCREEN_WIDTH = 800;
+const unsigned int SCREEN_HEIGHT = 600;
 
 enum CameraMode {
 	SPECTATOR,
@@ -69,6 +74,8 @@ public:
 		startPosition = position;
 		Set(width, height, position);
 	}
+
+
 
 	void LockToTarget(glm::vec3 targetPosition, glm::vec3 offset) {
 		glm::vec3 offsetPosition = targetPosition + offset;
@@ -139,9 +146,18 @@ public:
 		return glm::lookAt(position, position + forward, up);
 	}
 
+	glm::mat4 GetViewMatrix()
+	{
+		return glm::lookAt(position, position + forward, up);
+	}
+
 	const glm::vec3 GetPosition() const
 	{
 		return position;
+	}
+	glm::mat4 GetProjMatrix(float aspect)
+	{
+		return glm::perspective(glm::radians(FoVy), aspect, zNear, zFar);
 	}
 
 	const glm::mat4 GetProjectionMatrix() const
@@ -313,6 +329,153 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
+//skybox stuff
+unsigned int cubemapTexture;
+unsigned int skyboxVAO, skyboxVBO;
+const float skyboxVertices[] = {
+	// positions
+	-1.0f, 1.0f, -1.0f,
+	-1.0f, -1.0f, -1.0f,
+	1.0f, -1.0f, -1.0f,
+	1.0f, -1.0f, -1.0f,
+	1.0f, 1.0f, -1.0f,
+	-1.0f, 1.0f, -1.0f,
+
+	-1.0f, -1.0f, 1.0f,
+	-1.0f, -1.0f, -1.0f,
+	-1.0f, 1.0f, -1.0f,
+	-1.0f, 1.0f, -1.0f,
+	-1.0f, 1.0f, 1.0f,
+	-1.0f, -1.0f, 1.0f,
+
+	1.0f, -1.0f, -1.0f,
+	1.0f, -1.0f, 1.0f,
+	1.0f, 1.0f, 1.0f,
+	1.0f, 1.0f, 1.0f,
+	1.0f, 1.0f, -1.0f,
+	1.0f, -1.0f, -1.0f,
+
+	-1.0f, -1.0f, 1.0f,
+	-1.0f, 1.0f, 1.0f,
+	1.0f, 1.0f, 1.0f,
+	1.0f, 1.0f, 1.0f,
+	1.0f, -1.0f, 1.0f,
+	-1.0f, -1.0f, 1.0f,
+
+	-1.0f, 1.0f, -1.0f,
+	1.0f, 1.0f, -1.0f,
+	1.0f, 1.0f, 1.0f,
+	1.0f, 1.0f, 1.0f,
+	-1.0f, 1.0f, 1.0f,
+	-1.0f, 1.0f, -1.0f,
+
+	-1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f, 1.0f,
+	1.0f, -1.0f, -1.0f,
+	1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f, 1.0f,
+	1.0f, -1.0f, 1.0f
+};
+const std::vector<std::string> faces{
+		 FileSystem::getPath("Assets/skybox/day/right.jpg"),
+		 FileSystem::getPath("Assets/skybox/day/left.jpg"),
+		 FileSystem::getPath("Assets/skybox/day/top.jpg"),
+		 FileSystem::getPath("Assets/skybox/day/bottom.jpg"),
+		 FileSystem::getPath("Assets/skybox/day/front.jpg"),
+		 FileSystem::getPath("Assets/skybox/day/back.jpg")
+};
+const std::vector<std::string> faces2{
+		 FileSystem::getPath("Assets/skybox/night/right.jpg"),
+		 FileSystem::getPath("Assets/skybox/night/left.jpg"),
+		 FileSystem::getPath("Assets/skybox/night/top.jpg"),
+		 FileSystem::getPath("Assets/skybox/night/bottom.jpg"),
+		 FileSystem::getPath("Assets/skybox/night/front.jpg"),
+		 FileSystem::getPath("Assets/skybox/night/back.jpg")
+};
+
+unsigned int loadCubemap(std::vector<std::string> faces)
+{
+	//initialize texture id and bind it
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+	int width, height, nrChannels;
+	for (int i = 0; i < faces.size(); i++)
+	{
+		unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+		if (data)
+		{
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+			//stbi_image_free(data);
+		}
+		else {
+			std::cout << "Could not load texture at path: " << faces[i] << std::endl;
+			//stbi_image_free(data);
+		}
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	return textureID;
+
+}
+
+//function to initialize sky box
+void skyboxInit() {
+
+	//skybox VAO
+	glGenVertexArrays(1, &skyboxVAO);
+	glGenBuffers(1, &skyboxVBO);
+	glBindVertexArray(skyboxVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+	////load textures
+	cubemapTexture = loadCubemap(faces);
+}
+
+void skyboxReload() {
+
+	//skybox VAO
+	glGenVertexArrays(1, &skyboxVAO);
+	glGenBuffers(1, &skyboxVBO);
+	glBindVertexArray(skyboxVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+	//load textures
+	cubemapTexture = loadCubemap(faces2);
+}
+
+//function to render the skybox
+void renderSkybox(Shader& shader)
+{
+	
+	//view matrix constructed to remove the movement of the camera
+	glm::mat4 viewMatrix = glm::mat4(glm::mat3(pCamera->GetViewMatrix()));
+	// projection
+	glm::mat4 projMatrix = pCamera->GetProjMatrix((float)SCREEN_WIDTH / (float)SCREEN_HEIGHT);
+
+	shader.setMat4("view", viewMatrix);
+	shader.setMat4("projection", projMatrix);
+
+	glBindVertexArray(skyboxVAO);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+
+}
+
 /*void RenderScene(Shader& shader)
 {
 	// presupunem că ai o listă de modele sau entități de randat
@@ -323,6 +486,55 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }*/
 
+GLuint loadTexture(char const* path)
+{
+	GLuint textureID;
+	glGenTextures(1, &textureID);
+
+	int width, height, nrComponents;
+	unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
+	if (data)
+	{
+		GLenum format;
+		if (nrComponents == 1)
+			format = GL_RED;
+		else if (nrComponents == 3)
+			format = GL_RGB;
+		else if (nrComponents == 4)
+			format = GL_RGBA;
+
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		stbi_image_free(data);
+	}
+	else
+	{
+		std::cout << "Texture failed to load at path: " << path << std::endl;
+		stbi_image_free(data);
+	}
+
+	return textureID;
+}
+
+float floorVertices[] = {
+	// poziții          // normale       // coordonate textura
+	25.0f, 0.0f,  25.0f,  0.0f, 1.0f, 0.0f,  10.0f, 0.0f,
+   -25.0f, 0.0f,  25.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+   -25.0f, 0.0f, -25.0f,  0.0f, 1.0f, 0.0f,  0.0f, 10.0f,
+
+	25.0f, 0.0f,  25.0f,  0.0f, 1.0f, 0.0f,  10.0f, 0.0f,
+   -25.0f, 0.0f, -25.0f,  0.0f, 1.0f, 0.0f,  0.0f, 10.0f,
+	25.0f, 0.0f, -25.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f
+};
+
+
 
 
 int main()
@@ -332,6 +544,8 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+
 
 	// glfw window creation
 	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Lab 7", NULL, NULL);
@@ -350,9 +564,16 @@ int main()
 	// tell GLFW to capture our mouse
 	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+
 	glewInit();
 
 	glEnable(GL_DEPTH_TEST);
+
+	skyboxInit();
+	Shader skyboxShader("Shaders/skybox.vs", "Shaders/skybox.fs");
+	skyboxShader.use();
+	skyboxShader.setInt("skybox", 0);
+
 
 	// set up vertex data (and buffer(s)) and configure vertex attributes
 	float vertices[] = {
@@ -489,8 +710,12 @@ int main()
 
 
 
-	std::string hartaObjFileName = (currentPath + "\\Models\\Harta.obj");
-	 Model hartaModel(hartaObjFileName, false);
+	/*std::string hartaObjFileName = (currentPath + "\\Models\\Harta.obj");
+	 Model hartaModel(hartaObjFileName, false);*/
+
+	GLuint floorTexture = loadTexture("\\Models\\Harta2.jpg");
+
+	glBindTexture(GL_TEXTURE_2D, floorTexture);
 
 	masinaModel = new Model(currentPath + "\\Models\\F1LowPoly.obj", false);
 
@@ -519,14 +744,16 @@ int main()
 		lightingShader.setMat4("projection", pCamera->GetProjectionMatrix());
 		lightingShader.setMat4("view", pCamera->GetViewMatrix());
 
+		
+
 		// render the model
 		//glm::mat4 model = glm::scale(glm::mat4(1.0), glm::vec3(0.001f));
 		//lightingShader.setMat4("model", model);
 		//objModel.Draw(lightingShader);
 
-		glm::mat4 hartaModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -25.5f, 0.0f));
+		/*glm::mat4 hartaModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -25.5f, 0.0f));
 		lightingShader.setMat4("model", hartaModelMatrix);
-		hartaModel.Draw(lightingShader);
+		hartaModel.Draw(lightingShader);*/
 
 		glm::mat4 masinaModelMatrix = masinaModel->GetTransformMatrix();
 		lightingShader.setMat4("model", masinaModelMatrix);
@@ -543,6 +770,10 @@ int main()
 
 		glBindVertexArray(lightVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		glDepthFunc(GL_LEQUAL);
+		skyboxShader.use();
+		renderSkybox(skyboxShader);
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		glfwSwapBuffers(window);
