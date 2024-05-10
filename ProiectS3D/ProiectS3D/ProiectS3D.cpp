@@ -295,6 +295,7 @@ protected:
 
 GLuint ProjMatrixLocation, ViewMatrixLocation, WorldMatrixLocation;
 Model* masinaModel = nullptr;
+Model* raceTrackModel = nullptr;
 Camera* pCamera = nullptr;
 
 void Cleanup()
@@ -535,6 +536,20 @@ float floorVertices[] = {
 };
 
 
+void renderRaceTrack(Model& model, Shader& shader)
+{
+	// view transition
+	glm::mat4 viewMatrix = pCamera->GetViewMatrix();
+	shader.setMat4("view", viewMatrix);
+	// model conversion
+	glm::mat4 modelMatrix = glm::mat4(1.0f);
+	shader.setMat4("model", modelMatrix);
+	// projection transformation
+	glm::mat4 projMatrix = pCamera->GetProjMatrix((float)SCREEN_WIDTH / (float)SCREEN_HEIGHT);
+	shader.setMat4("projection", projMatrix);
+
+	model.Draw(shader);
+}
 
 
 int main()
@@ -574,6 +589,7 @@ int main()
 	skyboxShader.use();
 	skyboxShader.setInt("skybox", 0);
 
+	
 
 	// set up vertex data (and buffer(s)) and configure vertex attributes
 	float vertices[] = {
@@ -659,6 +675,8 @@ int main()
 
 	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
 	std::string currentPath = converter.to_bytes(wscurrentPath);
+		
+	
 
 	Shader lightingShader((currentPath + "\\Shaders\\PhongLight.vs").c_str(), (currentPath + "\\Shaders\\PhongLight.fs").c_str());
 	Shader lampShader((currentPath + "\\Shaders\\Lamp.vs").c_str(), (currentPath + "\\Shaders\\Lamp.fs").c_str());
@@ -751,9 +769,10 @@ int main()
 		//lightingShader.setMat4("model", model);
 		//objModel.Draw(lightingShader);
 
-		/*glm::mat4 hartaModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -25.5f, 0.0f));
-		lightingShader.setMat4("model", hartaModelMatrix);
-		hartaModel.Draw(lightingShader);*/
+		//racetrack stuff
+		Shader raceTrackShader("Shaders/racetrack.vs", "Shaders/racetrack.fs");
+		Shader raceTrackShaderN("", "");
+		raceTrackModel = new Model(currentPath + "\\Models\\Harta.obj", false);
 
 		glm::mat4 masinaModelMatrix = masinaModel->GetTransformMatrix();
 		lightingShader.setMat4("model", masinaModelMatrix);
