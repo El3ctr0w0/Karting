@@ -477,6 +477,8 @@ void renderSkybox(Shader& shader)
 
 }
 
+
+
 GLuint loadTexture(char const* path)
 {
 	GLuint textureID;
@@ -548,15 +550,40 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 
+	GLuint floorTexture = loadTexture("D:\\S3D\\Karting\\ProiectS3D\\Models\\Harta.png");
+	if (floorTexture == 0) {
+		std::cout << "Failed to load floor texture!" << std::endl;
+	}
+	else {
+		std::cout << "Loaded floor texture!\n\n\n\n\n" << std::endl;
+	}
+
+	int width, height, nrChannels;
+	unsigned char* data = stbi_load("D:\\S3D\\Karting\\ProiectS3D\\Models\\Harta.png", &width, &height, &nrChannels, 0);
+	if (data) {
+		std::cout << "Width: " << width << " Height: " << height << std::endl;
+		stbi_image_free(data);
+	}
+	else {
+		std::cout << "Failed to load texture" << std::endl;
+		return 0;
+	}
+
+
+	float scaleFactor = 50.0f;
+	float aspectRatio = static_cast<float>(width) / height;
+	float quadHeight = 10.0f *scaleFactor;  // Alege o înălțime standard pentru podea
+	float quadWidth = quadHeight * aspectRatio *scaleFactor;  // Calculează lățimea bazată pe aspectul imaginii
+
 	float floorVertices[] = {
 		// poziții          // normale       // coordonate textura
-		75.0f, 0.0f,  75.0f,  0.0f, 1.0f, 0.0f,  20.0f, 0.0f,
-	   -75.0f, 0.0f,  75.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
-	   -75.0f, 0.0f, -75.0f,  0.0f, 1.0f, 0.0f,  0.0f, 20.0f,
+		quadWidth / 2, 0.0f,  quadHeight / 2,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
+	   -quadWidth / 2, 0.0f,  quadHeight / 2,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+	   -quadWidth / 2, 0.0f, -quadHeight / 2,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f,
 
-		75.0f, 0.0f,  75.0f,  0.0f, 1.0f, 0.0f,  20.0f, 0.0f,
-	   -75.0f, 0.0f, -75.0f,  0.0f, 1.0f, 0.0f,  0.0f, 20.0f,
-		75.0f, 0.0f, -75.0f,  0.0f, 1.0f, 0.0f,  20.0f, 20.0f
+		quadWidth / 2, 0.0f,  quadHeight / 2,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
+	   -quadWidth / 2, 0.0f, -quadHeight / 2,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f,
+		quadWidth / 2, 0.0f, -quadHeight / 2,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f
 	};
 
 	
@@ -581,13 +608,7 @@ int main()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	GLuint floorTexture = loadTexture("D:\\S3D\\Karting\\ProiectS3D\\Models\\Harta.jpg");
-	if (floorTexture == 0) {
-		std::cout << "Failed to load floor texture!" << std::endl;
-	}
-	else {
-		std::cout<<"Loaded floor texture!\n\n\n\n\n" << std::endl;
-	}
+	
 
 	skyboxInit();
 	Shader skyboxShader("Shaders/skybox.vs", "Shaders/skybox.fs");
@@ -763,20 +784,22 @@ int main()
 
 		Shader floorShader("Shaders/Floor.vs", "Shaders/Floor.fs");
 		floorShader.use();
+		floorShader.setInt("texture1", 0);
 
 		// Setează transformările necesare
 		glm::mat4 floorModel = glm::mat4(1.0f);
 		floorShader.setMat4("model", floorModel);
 		floorShader.setMat4("view", pCamera->GetViewMatrix());
 		floorShader.setMat4("projection", pCamera->GetProjectionMatrix());
+
 		glBindVertexArray(floorVAO);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindTexture(GL_TEXTURE_2D, floorTexture);  // Asigură-te că folosești GL_TEXTURE_2D aici
+		floorShader.setInt("texture1", 0);  // Presupunând că uniforma în shader este numită 'texture1'
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
 
-		glDrawArrays(GL_TRIANGLES, 0, 6); // Presupunând că folosești 6 vertexuri pentru a desena podeaua
-		glBindVertexArray(0);
+
 
 		lightingShader.use();
 		glm::mat4 masinaModelMatrix = masinaModel->GetTransformMatrix();
