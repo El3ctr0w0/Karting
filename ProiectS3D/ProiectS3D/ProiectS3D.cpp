@@ -550,7 +550,7 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 
-	GLuint floorTexture = loadTexture("D:\\S3D\\Karting\\ProiectS3D\\Models\\Harta.png");
+	GLuint floorTexture = loadTexture("Models/Harta.png");
 	if (floorTexture == 0) {
 		std::cout << "Failed to load floor texture!" << std::endl;
 	}
@@ -559,7 +559,7 @@ int main()
 	}
 
 	int width, height, nrChannels;
-	unsigned char* data = stbi_load("D:\\S3D\\Karting\\ProiectS3D\\Models\\Harta.png", &width, &height, &nrChannels, 0);
+	unsigned char* data = stbi_load("Models/Harta.png", &width, &height, &nrChannels, 0);
 	if (data) {
 		std::cout << "Width: " << width << " Height: " << height << std::endl;
 		stbi_image_free(data);
