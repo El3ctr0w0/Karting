@@ -268,8 +268,8 @@ private:
 	}
 
 protected:
-	const float cameraSpeedFactor = 2.5f;
-	const float mouseSensitivity = 0.1f;
+	const float cameraSpeedFactor = 5.5f;
+	const float mouseSensitivity = 1.0f;
 
 	// Perspective properties
 	float zNear;
@@ -477,16 +477,6 @@ void renderSkybox(Shader& shader)
 
 }
 
-/*void RenderScene(Shader& shader)
-{
-	// presupunem că ai o listă de modele sau entități de randat
-	for (auto& model : models) {
-		glm::mat4 modelMatrix = model.GetTransformMatrix();
-		shader.setMat4("model", modelMatrix);
-		model.Draw(shader);
-	}
-}*/
-
 GLuint loadTexture(char const* path)
 {
 	GLuint textureID;
@@ -524,32 +514,6 @@ GLuint loadTexture(char const* path)
 	return textureID;
 }
 
-float floorVertices[] = {
-	// poziții          // normale       // coordonate textura
-	25.0f, 0.0f,  25.0f,  0.0f, 1.0f, 0.0f,  10.0f, 0.0f,
-   -25.0f, 0.0f,  25.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
-   -25.0f, 0.0f, -25.0f,  0.0f, 1.0f, 0.0f,  0.0f, 10.0f,
-
-	25.0f, 0.0f,  25.0f,  0.0f, 1.0f, 0.0f,  10.0f, 0.0f,
-   -25.0f, 0.0f, -25.0f,  0.0f, 1.0f, 0.0f,  0.0f, 10.0f,
-	25.0f, 0.0f, -25.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f
-};
-
-
-void renderRaceTrack(Model& model, Shader& shader)
-{
-	// view transition
-	glm::mat4 viewMatrix = pCamera->GetViewMatrix();
-	shader.setMat4("view", viewMatrix);
-	// model conversion
-	glm::mat4 modelMatrix = glm::mat4(1.0f);
-	shader.setMat4("model", modelMatrix);
-	// projection transformation
-	glm::mat4 projMatrix = pCamera->GetProjMatrix((float)SCREEN_WIDTH / (float)SCREEN_HEIGHT);
-	shader.setMat4("projection", projMatrix);
-
-	model.Draw(shader);
-}
 
 
 int main()
@@ -586,14 +550,15 @@ int main()
 
 	float floorVertices[] = {
 		// poziții          // normale       // coordonate textura
-		25.0f, 0.0f,  25.0f,  0.0f, 1.0f, 0.0f,  10.0f, 0.0f,
-	   -25.0f, 0.0f,  25.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
-	   -25.0f, 0.0f, -25.0f,  0.0f, 1.0f, 0.0f,  0.0f, 10.0f,
+		75.0f, 0.0f,  75.0f,  0.0f, 1.0f, 0.0f,  20.0f, 0.0f,
+	   -75.0f, 0.0f,  75.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+	   -75.0f, 0.0f, -75.0f,  0.0f, 1.0f, 0.0f,  0.0f, 20.0f,
 
-		25.0f, 0.0f,  25.0f,  0.0f, 1.0f, 0.0f,  10.0f, 0.0f,
-	   -25.0f, 0.0f, -25.0f,  0.0f, 1.0f, 0.0f,  0.0f, 10.0f,
-		25.0f, 0.0f, -25.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f
+		75.0f, 0.0f,  75.0f,  0.0f, 1.0f, 0.0f,  20.0f, 0.0f,
+	   -75.0f, 0.0f, -75.0f,  0.0f, 1.0f, 0.0f,  0.0f, 20.0f,
+		75.0f, 0.0f, -75.0f,  0.0f, 1.0f, 0.0f,  20.0f, 20.0f
 	};
+
 	
 	GLuint floorVAO, floorVBO;
 	glGenVertexArrays(1, &floorVAO);
@@ -617,7 +582,12 @@ int main()
 	glBindVertexArray(0);
 
 	GLuint floorTexture = loadTexture("D:\\S3D\\Karting\\ProiectS3D\\Models\\Harta.jpg");
-
+	if (floorTexture == 0) {
+		std::cout << "Failed to load floor texture!" << std::endl;
+	}
+	else {
+		std::cout<<"Loaded floor texture!\n\n\n\n\n" << std::endl;
+	}
 
 	skyboxInit();
 	Shader skyboxShader("Shaders/skybox.vs", "Shaders/skybox.fs");
@@ -790,13 +760,8 @@ int main()
 		lightingShader.setMat4("projection", pCamera->GetProjectionMatrix());
 		lightingShader.setMat4("view", pCamera->GetViewMatrix());
 
-		
 
-		glBindVertexArray(floorVAO);
-		glBindTexture(GL_TEXTURE_2D, floorTexture);
-		glActiveTexture(GL_TEXTURE0);
-
-		Shader floorShader("D:\\S3D\\Karting\\ProiectS3D\\ProiectS3D\\Shaders\\Floor.vs", "D:\\S3D\\Karting\\ProiectS3D\\ProiectS3D\\Shaders\\Floor.fs");
+		Shader floorShader("Shaders/Floor.vs", "Shaders/Floor.fs");
 		floorShader.use();
 
 		// Setează transformările necesare
@@ -804,11 +769,16 @@ int main()
 		floorShader.setMat4("model", floorModel);
 		floorShader.setMat4("view", pCamera->GetViewMatrix());
 		floorShader.setMat4("projection", pCamera->GetProjectionMatrix());
+		glBindVertexArray(floorVAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
 
 		glDrawArrays(GL_TRIANGLES, 0, 6); // Presupunând că folosești 6 vertexuri pentru a desena podeaua
 		glBindVertexArray(0);
 
-
+		lightingShader.use();
 		glm::mat4 masinaModelMatrix = masinaModel->GetTransformMatrix();
 		lightingShader.setMat4("model", masinaModelMatrix);
 		masinaModel->Draw(lightingShader);
@@ -861,9 +831,9 @@ void processInput(GLFWwindow* window)
 		// În modul Third Person, controlăm mașina, dar camera rămâne fixată
 		glm::vec3 movementDirection = glm::vec3(0.0f);
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-			movementDirection += glm::vec3(0.0f, 0.0f, 5.0f); // Presupunem că aceste direcții sunt corecte pentru mișcarea mașinii
+			movementDirection += glm::vec3(0.0f, 0.0f, 25.0f); // Presupunem că aceste direcții sunt corecte pentru mișcarea mașinii
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-			movementDirection += glm::vec3(0.0f, 0.0f, -5.0f);
+			movementDirection -= glm::vec3(0.0f, 0.0f, 25.0f);
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
 			masinaModel->Rotate(90.0f * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));  // Rotate left
 		}
