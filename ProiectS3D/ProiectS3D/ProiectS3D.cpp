@@ -584,6 +584,41 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 
+	float floorVertices[] = {
+		// poziții          // normale       // coordonate textura
+		25.0f, 0.0f,  25.0f,  0.0f, 1.0f, 0.0f,  10.0f, 0.0f,
+	   -25.0f, 0.0f,  25.0f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+	   -25.0f, 0.0f, -25.0f,  0.0f, 1.0f, 0.0f,  0.0f, 10.0f,
+
+		25.0f, 0.0f,  25.0f,  0.0f, 1.0f, 0.0f,  10.0f, 0.0f,
+	   -25.0f, 0.0f, -25.0f,  0.0f, 1.0f, 0.0f,  0.0f, 10.0f,
+		25.0f, 0.0f, -25.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f
+	};
+	
+	GLuint floorVAO, floorVBO;
+	glGenVertexArrays(1, &floorVAO);
+	glBindVertexArray(floorVAO);
+
+	glGenBuffers(1, &floorVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, floorVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(floorVertices), floorVertices, GL_STATIC_DRAW);
+
+	// Poziție vertex
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	// Normala vertex
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	// Coordonatele texturii
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	GLuint floorTexture = loadTexture("D:\\S3D\\Karting\\ProiectS3D\\Models\\Harta.jpg");
+
+
 	skyboxInit();
 	Shader skyboxShader("Shaders/skybox.vs", "Shaders/skybox.fs");
 	skyboxShader.use();
@@ -728,13 +763,6 @@ int main()
 
 
 
-	/*std::string hartaObjFileName = (currentPath + "\\Models\\Harta.obj");
-	 Model hartaModel(hartaObjFileName, false);*/
-
-	GLuint floorTexture = loadTexture("\\Models\\Harta2.jpg");
-
-	glBindTexture(GL_TEXTURE_2D, floorTexture);
-
 	masinaModel = new Model(currentPath + "\\Models\\F1LowPoly.obj", false);
 
 	// render loop
@@ -764,28 +792,26 @@ int main()
 
 		
 
-		// render the model
-		//glm::mat4 model = glm::scale(glm::mat4(1.0), glm::vec3(0.001f));
-		//lightingShader.setMat4("model", model);
-		//objModel.Draw(lightingShader);
+		glBindVertexArray(floorVAO);
+		glBindTexture(GL_TEXTURE_2D, floorTexture);
+		glActiveTexture(GL_TEXTURE0);
 
-		//racetrack stuff
-		Shader raceTrackShader("Shaders/racetrack.vs", "Shaders/racetrack.fs");
-		Shader raceTrackShaderN("", "");
-		raceTrackModel = new Model(currentPath + "\\Models\\Harta.obj", false);
+		Shader floorShader("D:\\S3D\\Karting\\ProiectS3D\\ProiectS3D\\Shaders\\Floor.vs", "D:\\S3D\\Karting\\ProiectS3D\\ProiectS3D\\Shaders\\Floor.fs");
+		floorShader.use();
+
+		// Setează transformările necesare
+		glm::mat4 floorModel = glm::mat4(1.0f);
+		floorShader.setMat4("model", floorModel);
+		floorShader.setMat4("view", pCamera->GetViewMatrix());
+		floorShader.setMat4("projection", pCamera->GetProjectionMatrix());
+
+		glDrawArrays(GL_TRIANGLES, 0, 6); // Presupunând că folosești 6 vertexuri pentru a desena podeaua
+		glBindVertexArray(0);
+
 
 		glm::mat4 masinaModelMatrix = masinaModel->GetTransformMatrix();
 		lightingShader.setMat4("model", masinaModelMatrix);
 		masinaModel->Draw(lightingShader);
-
-
-		// also draw the lamp object
-		lampShader.use();
-		lampShader.setMat4("projection", pCamera->GetProjectionMatrix());
-		lampShader.setMat4("view", pCamera->GetViewMatrix());
-		glm::mat4 lightModel = glm::translate(glm::mat4(1.0), lightPos);
-		lightModel = glm::scale(lightModel, glm::vec3(0.05f)); // a smaller cube
-		lampShader.setMat4("model", lightModel);
 
 		glBindVertexArray(lightVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
