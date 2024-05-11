@@ -550,7 +550,7 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 
-	GLuint floorTexture = loadTexture("Models/Harta.png");
+	GLuint floorTexture = loadTexture("Models/Harta.jpg");
 	if (floorTexture == 0) {
 		std::cout << "Failed to load floor texture!" << std::endl;
 	}
@@ -559,7 +559,7 @@ int main()
 	}
 
 	int width, height, nrChannels;
-	unsigned char* data = stbi_load("Models/Harta.png", &width, &height, &nrChannels, 0);
+	unsigned char* data = stbi_load("Models/Harta.jpg", &width, &height, &nrChannels, 0);
 	if (data) {
 		std::cout << "Width: " << width << " Height: " << height << std::endl;
 		stbi_image_free(data);
@@ -570,13 +570,13 @@ int main()
 	}
 
 
-	float scaleFactor = 50.0f;
+	float scaleFactor = 50.0f; // sau orice altă valoare pentru scalare
 	float aspectRatio = static_cast<float>(width) / height;
-	float quadHeight = 10.0f *scaleFactor;  // Alege o înălțime standard pentru podea
-	float quadWidth = quadHeight * aspectRatio *scaleFactor;  // Calculează lățimea bazată pe aspectul imaginii
+	float quadHeight = 10.0f * scaleFactor;
+	float quadWidth = quadHeight * aspectRatio;
 
 	float floorVertices[] = {
-		// poziții          // normale       // coordonate textura
+		// poziții                         // normale     // coordonate textura
 		quadWidth / 2, 0.0f,  quadHeight / 2,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
 	   -quadWidth / 2, 0.0f,  quadHeight / 2,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
 	   -quadWidth / 2, 0.0f, -quadHeight / 2,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f,
@@ -585,6 +585,8 @@ int main()
 	   -quadWidth / 2, 0.0f, -quadHeight / 2,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f,
 		quadWidth / 2, 0.0f, -quadHeight / 2,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f
 	};
+
+
 
 	
 	GLuint floorVAO, floorVBO;
@@ -752,6 +754,7 @@ int main()
 	// Setează alte uniforme necesare pentru shadowShader
 	//RenderScene(shadowShader);
 
+	Shader floorShader("Shaders/Floor.vs", "Shaders/Floor.fs");
 
 
 	masinaModel = new Model(currentPath + "\\Models\\F1LowPoly.obj", false);
@@ -782,7 +785,6 @@ int main()
 		lightingShader.setMat4("view", pCamera->GetViewMatrix());
 
 
-		Shader floorShader("Shaders/Floor.vs", "Shaders/Floor.fs");
 		floorShader.use();
 		floorShader.setInt("texture1", 0);
 
