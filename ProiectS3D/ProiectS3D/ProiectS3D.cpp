@@ -805,11 +805,23 @@ int main()
 	glfwTerminate();
 	return 0;
 }
+bool isDay = true;
 
 void processInput(GLFWwindow* window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
+
+	if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
+	{
+		skyboxInit();
+		isDay = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
+	{
+		skyboxReload();
+		isDay = false;
+	}
 
 	// Diferențiem controlul camerei pe baza modului curent
 	if (cameraMode == SPECTATOR) {
