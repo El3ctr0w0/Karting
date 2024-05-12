@@ -18,6 +18,7 @@ public:
     glm::vec3 Rotation;
     string directory;
     bool gammaCorrection;
+    float Yaw;
 
     void UpdatePosition(const glm::vec3& direction);
     
@@ -27,6 +28,9 @@ public:
     Model(string const& path, bool bSmoothNormals, bool gamma = false);
     void Rotate(float angle, glm::vec3 axis);
     
+    float getMidValYaw();
+    glm::vec3 getMidValPosition();
+    float getYaw();
 
     // draws the model, and thus all its meshes
     void Draw(Shader& shader);

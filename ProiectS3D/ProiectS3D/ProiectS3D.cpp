@@ -776,9 +776,9 @@ int main()
 		lightPos.z = 0.5 * sin(glfwGetTime());
 
 		lightingShader.use();
-		lightingShader.SetVec3("objectColor", 0.5f, 1.0f, 0.31f);
-		lightingShader.SetVec3("lightColor", 1.0f, 1.0f, 1.0f);
-		lightingShader.SetVec3("lightPos", lightPos);
+		//lightingShader.SetVec3("objectColor", 0.5f, 1.0f, 0.31f);
+		//lightingShader.SetVec3("lightColor", 1.0f, 1.0f, 1.0f);
+		//lightingShader.SetVec3("lightPos", lightPos);
 		lightingShader.SetVec3("viewPos", pCamera->GetPosition());
 
 		lightingShader.setMat4("projection", pCamera->GetProjectionMatrix());

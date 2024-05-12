@@ -7,12 +7,28 @@
 
 Model::Model(string const& path, bool bSmoothNormals, bool gamma) : gammaCorrection(gamma)
 {
+    Yaw = 0;
     loadModel(path, bSmoothNormals);
 }
 
 void Model::Rotate(float angle, glm::vec3 axis)
 { 
    Rotation += angle * axis;  // Increment rotation angles   
+}
+
+float Model::getMidValYaw()
+{
+    return  Yaw / 2;
+}
+
+glm::vec3 Model::getMidValPosition()
+{
+    return Position / 2.0f;
+}
+
+float Model::getYaw()
+{
+    return Yaw;
 }
 
 void Model::Draw(Shader& shader)
