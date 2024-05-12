@@ -55,7 +55,7 @@ enum ECameraMovementType
 };
 
 float deltaYaw = 90.0f;
-float deltaPitch = -10.0f; 
+float deltaPitch = -10.0f;
 
 class Camera
 {
@@ -93,7 +93,7 @@ public:
 		front.y = sin(glm::radians(pitch));
 		front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 		forward = glm::normalize(front);
-		
+
 		// Asigură-te că forward vectorul camerei se uită înspre mașină
 		forward = glm::normalize(targetPosition - position);
 		UpdateCameraVectors();
@@ -460,7 +460,7 @@ void skyboxReload() {
 //function to render the skybox
 void renderSkybox(Shader& shader)
 {
-	
+
 	//view matrix constructed to remove the movement of the camera
 	glm::mat4 viewMatrix = glm::mat4(glm::mat3(pCamera->GetViewMatrix()));
 	// projection
@@ -588,7 +588,7 @@ int main()
 
 
 
-	
+
 	GLuint floorVAO, floorVBO;
 	glGenVertexArrays(1, &floorVAO);
 	glBindVertexArray(floorVAO);
@@ -610,14 +610,14 @@ int main()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	
+
 
 	skyboxInit();
 	Shader skyboxShader("Shaders/skybox.vs", "Shaders/skybox.fs");
 	skyboxShader.use();
 	skyboxShader.setInt("skybox", 0);
 
-	
+
 
 	// set up vertex data (and buffer(s)) and configure vertex attributes
 	float vertices[] = {
@@ -703,13 +703,13 @@ int main()
 
 	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
 	std::string currentPath = converter.to_bytes(wscurrentPath);
-		
-	
+
+
 
 	Shader lightingShader((currentPath + "\\Shaders\\PhongLight.vs").c_str(), (currentPath + "\\Shaders\\PhongLight.fs").c_str());
 	Shader lampShader((currentPath + "\\Shaders\\Lamp.vs").c_str(), (currentPath + "\\Shaders\\Lamp.fs").c_str());
 	Shader shadowShader((currentPath + "\\Shaders\\ShadowMapping.vs").c_str(), (currentPath + " \\Shaders\\ShadowMapping.fs").c_str());
-	Shader depthShader((currentPath+"\\Shaders\\ShadowMappingDepth.vs").c_str(),(currentPath+ "\\Shaders\\ShadowMappingDepth.fs").c_str());
+	Shader depthShader((currentPath + "\\Shaders\\ShadowMappingDepth.vs").c_str(), (currentPath + "\\Shaders\\ShadowMappingDepth.fs").c_str());
 
 	GLuint depthMapFBO;
 	GLuint depthMap;
@@ -866,19 +866,16 @@ void processInput(GLFWwindow* window)
 	}
 	else if (cameraMode == THIRD_PERSON) {
 		// În modul Third Person, controlăm mașina, dar camera rămâne fixată
-		glm::vec3 movementDirection = glm::vec3(0.0f);
+		glm::vec3 forwardMovement = glm::vec3(0.0f, 0.0f, -1.0f);
+		glm::vec3 rightMovement = glm::vec3(1.0f, 0.0f, 0.0f);
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-			movementDirection += glm::vec3(0.0f, 0.0f, 25.0f); // Presupunem că aceste direcții sunt corecte pentru mișcarea mașinii
+			masinaModel->UpdatePosition(-forwardMovement * 25.0f * (float)deltaTime);
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-			movementDirection -= glm::vec3(0.0f, 0.0f, 25.0f);
-		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-			masinaModel->Rotate(90.0f * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));  // Rotate left
-		}
-		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-			masinaModel->Rotate(-90.0f * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate right
-		}
-		// Actualizăm poziția mașinii în funcție de intrările de la tastatură
-		masinaModel->UpdatePosition(movementDirection * (float)deltaTime);
+			masinaModel->UpdatePosition(+forwardMovement * 25.0f * (float)deltaTime);
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+			masinaModel->Rotate(90.0f * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+			masinaModel->Rotate(-90.0f * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
 		pCamera->LockToTarget(masinaModel->GetPosition(), glm::vec3(0, 2, -10));
 	}
 
@@ -907,6 +904,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yOffset)
 {
-	if (cameraMode == SPECTATOR) 
+	if (cameraMode == SPECTATOR)
 		pCamera->ProcessMouseScroll((float)yOffset);
 }
