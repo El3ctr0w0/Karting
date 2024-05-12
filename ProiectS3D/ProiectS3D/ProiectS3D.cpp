@@ -77,25 +77,27 @@ public:
 
 
 
-	void LockToTarget(glm::vec3 targetPosition, glm::vec3 offset) {
-		glm::vec3 offsetPosition = targetPosition + offset;
-		position = offsetPosition;
-		position.y = position.y + 8;
-		position.z = position.z - 15;
+	void LockToTarget(glm::vec3 targetPosition, glm::vec3 targetRotation)
+	{
+		glm::vec3 offset = glm::vec3(0, 8, -15); // Offset vertical și înainte/înapoi
+		float rotationRadians = glm::radians(targetRotation.y + 180.0f); // Rotație cu 180 grade pentru a privi în față
+		glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), rotationRadians, glm::vec3(0.0f, 1.0f, 0.0f));
 
-		// Apply rotation changes based on input
-		yaw = deltaYaw;
-		pitch = deltaPitch;
+		glm::vec3 forward = glm::vec3(0.0f, 0.0f, 1.0f);
+		glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
 
-		// Recalculate forward vector
-		glm::vec3 front;
-		front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-		front.y = sin(glm::radians(pitch));
-		front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-		forward = glm::normalize(front);
+		// Compensația laterală bazată pe sinusul unghiului de rotație
+		float lateralCompensation = 5.0f * sin(rotationRadians); // '5.0f' este scalarea compensației, poate fi ajustată
 
-		// Asigură-te că forward vectorul camerei se uită înspre mașină
-		forward = glm::normalize(targetPosition - position);
+		glm::vec3 forwardPosition = rotationMatrix * glm::vec4(forward * glm::length(offset), 0.0f);
+		glm::vec3 lateralOffset = rotationMatrix * glm::vec4(right * lateralCompensation, 0.0f);
+
+		position = targetPosition + forwardPosition + lateralOffset;
+		position.y += offset.y;
+
+		yaw = targetRotation.y + 90.0f;
+		pitch = -targetRotation.x;
+
 		UpdateCameraVectors();
 	}
 
@@ -318,10 +320,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	if (key == GLFW_KEY_V && action == GLFW_PRESS) {
 		if (cameraMode == SPECTATOR) {
 			cameraMode = THIRD_PERSON;
-			// Blochează camera în spatele și deasupra mașinii
-			glm::vec3 cameraOffset = glm::vec3(0, 40, -50); // Modifică aceste valori dacă este necesar
-
-			pCamera->LockToTarget(masinaModel->GetPosition() + glm::vec3(0, 0, -cameraOffset.z), cameraOffset); // Offset-ul camerei relativ la mașină
+			pCamera->LockToTarget(masinaModel->GetPosition(), glm::vec3(0, 2, -10));
 		}
 		else {
 			cameraMode = SPECTATOR;
@@ -863,20 +862,32 @@ void processInput(GLFWwindow* window)
 			pCamera->ProcessKeyboard(UP, (float)deltaTime);
 		if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
 			pCamera->ProcessKeyboard(DOWN, (float)deltaTime);
+
 	}
 	else if (cameraMode == THIRD_PERSON) {
 		// În modul Third Person, controlăm mașina, dar camera rămâne fixată
 		glm::vec3 forwardMovement = glm::vec3(0.0f, 0.0f, -1.0f);
-		glm::vec3 rightMovement = glm::vec3(1.0f, 0.0f, 0.0f);
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		{
 			masinaModel->UpdatePosition(-forwardMovement * 25.0f * (float)deltaTime);
+			//pCamera->ProcessKeyboard(FORWARD, (float)deltaTime);
+		}
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		{
 			masinaModel->UpdatePosition(+forwardMovement * 25.0f * (float)deltaTime);
+			//pCamera->ProcessKeyboard(BACKWARD, (float)deltaTime);
+		}	
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		{
 			masinaModel->Rotate(90.0f * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
+			//pCamera->ProcessKeyboard(RIGHT, (float)deltaTime);
+		}
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		{
 			masinaModel->Rotate(-90.0f * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
-		pCamera->LockToTarget(masinaModel->GetPosition(), glm::vec3(0, 2, -10));
+			//pCamera->ProcessKeyboard(LEFT, (float)deltaTime);
+		}
+		pCamera->LockToTarget(masinaModel->GetPosition(), -masinaModel->Rotation);
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
