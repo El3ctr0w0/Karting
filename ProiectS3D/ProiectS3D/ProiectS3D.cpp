@@ -79,23 +79,18 @@ public:
 
 	void LockToTarget(glm::vec3 targetPosition, glm::vec3 targetRotation)
 	{
-		glm::vec3 offset = glm::vec3(0, 7, -15); // Offset vertical și înainte/înapoi
+		glm::vec3 offset = glm::vec3(0, 8, -15); // Offset vertical și înainte/înapoi
 		float rotationRadians = glm::radians(targetRotation.y + 180.0f); // Rotație cu 180 grade pentru a privi în față
 		glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), rotationRadians, glm::vec3(0.0f, 1.0f, 0.0f));
 
 		glm::vec3 forward = glm::vec3(0.0f, 0.0f, 1.0f);
-		glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
-
-		// Compensația laterală bazată pe sinusul unghiului de rotație
-		float lateralCompensation = 5.0f * sin(rotationRadians); // '5.0f' este scalarea compensației, poate fi ajustată
 
 		glm::vec3 forwardPosition = rotationMatrix * glm::vec4(forward * glm::length(offset), 0.0f);
-		glm::vec3 lateralOffset = rotationMatrix * glm::vec4(right * lateralCompensation, 0.0f);
 
 		position = targetPosition;
 		position.y += offset.y;
 
-		//yaw = targetRotation.y + 90.0f;
+		yaw = targetRotation.y + 90.0f;
 		//pitch = -targetRotation.x;
 
 		UpdateCameraVectors();
