@@ -31,6 +31,7 @@ public:
     float getMidValYaw();
     glm::vec3 getMidValPosition();
     float getYaw();
+    void SetPosition(const glm::vec3& newPosition);
 
     // draws the model, and thus all its meshes
     void Draw(Shader& shader);

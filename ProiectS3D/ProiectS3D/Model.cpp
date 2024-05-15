@@ -237,6 +237,10 @@ void Model::UpdatePosition(const glm::vec3& direction)
     Position += adjustedDirection;
 }
 
+void Model::SetPosition(const glm::vec3& newPosition)
+{
+    Position = newPosition;
+}
 
 glm::mat4 Model::GetTransformMatrix() const
 {

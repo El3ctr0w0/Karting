@@ -512,6 +512,10 @@ GLuint loadTexture(char const* path)
 	return textureID;
 }
 
+float scaleFactor;
+float aspectRatio;
+float quadHeight;
+float quadWidth;
 
 
 int main()
@@ -547,29 +551,15 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 	GLuint floorTexture = loadTexture("Models/Harta.jpg");
-	if (floorTexture == 0) {
-		std::cout << "Failed to load floor texture!" << std::endl;
-	}
-	else {
-		std::cout << "Loaded floor texture!\n\n\n\n\n" << std::endl;
-	}
 
 	int width, height, nrChannels;
 	unsigned char* data = stbi_load("Models/Harta.jpg", &width, &height, &nrChannels, 0);
-	if (data) {
-		std::cout << "Width: " << width << " Height: " << height << std::endl;
-		stbi_image_free(data);
-	}
-	else {
-		std::cout << "Failed to load texture" << std::endl;
-		return 0;
-	}
 
 
-	float scaleFactor = 50.0f; // sau orice altă valoare pentru scalare
-	float aspectRatio = static_cast<float>(width) / height;
-	float quadHeight = 10.0f * scaleFactor;
-	float quadWidth = quadHeight * aspectRatio;
+	scaleFactor = 50.0f; // sau orice altă valoare pentru scalare
+	aspectRatio = static_cast<float>(width) / height;
+	quadHeight = 10.0f * scaleFactor;
+	quadWidth = quadHeight * aspectRatio;
 
 	float floorVertices[] = {
 		// poziții                         // normale     // coordonate textura
@@ -581,9 +571,6 @@ int main()
 	   -quadWidth / 2, 0.0f, -quadHeight / 2,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f,
 		quadWidth / 2, 0.0f, -quadHeight / 2,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f
 	};
-
-
-
 
 	GLuint floorVAO, floorVBO;
 	glGenVertexArrays(1, &floorVAO);
@@ -862,28 +849,29 @@ void processInput(GLFWwindow* window)
 
 	}
 	else if (cameraMode == THIRD_PERSON) {
-		// În modul Third Person, controlăm mașina, dar camera rămâne fixată
-		glm::vec3 forwardMovement = glm::vec3(0.0f, 0.0f, -1.0f);
+		glm::vec3 direction = glm::vec3(0.0f);
+		float speed = 25.0f * deltaTime;
+
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		{
-			masinaModel->UpdatePosition(-forwardMovement * 25.0f * (float)deltaTime);
-			//pCamera->ProcessKeyboard(FORWARD, (float)deltaTime);
-		}
+			direction.z += speed;
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		{
-			masinaModel->UpdatePosition(+forwardMovement * 25.0f * (float)deltaTime);
-			//pCamera->ProcessKeyboard(BACKWARD, (float)deltaTime);
-		}	
+			direction.z -= speed;
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		{
 			masinaModel->Rotate(90.0f * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
-			//pCamera->ProcessKeyboard(RIGHT, (float)deltaTime);
-		}
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		{
 			masinaModel->Rotate(-90.0f * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
-			//pCamera->ProcessKeyboard(LEFT, (float)deltaTime);
-		}
+
+		// Actualizează poziția
+		masinaModel->UpdatePosition(direction);
+
+		// Verifică și restricționează poziția
+		glm::vec3 pos = masinaModel->GetPosition();
+		if (pos.x < -quadWidth / 2) pos.x = -quadWidth / 2;
+		if (pos.x > quadWidth / 2) pos.x = quadWidth / 2;
+		if (pos.z < -quadHeight / 2) pos.z = -quadHeight / 2;
+		if (pos.z > quadHeight / 2) pos.z = quadHeight / 2;
+		masinaModel->SetPosition(pos);
+
 		pCamera->LockToTarget(masinaModel->GetPosition(), -masinaModel->Rotation);
 	}
 
