@@ -847,6 +847,30 @@ void processInput(GLFWwindow* window)
 		if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
 			pCamera->ProcessKeyboard(DOWN, (float)deltaTime);
 
+		glm::vec3 direction = glm::vec3(0.0f);
+		float speed = 25.0f * deltaTime;
+
+		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+			direction.z += speed;
+		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+			direction.z -= speed;
+		if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+			masinaModel->Rotate(90.0f * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
+		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+			masinaModel->Rotate(-90.0f * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
+
+		// Actualizează poziția
+		masinaModel->UpdatePosition(direction);
+
+		// Verifică și restricționează poziția
+		glm::vec3 pos = masinaModel->GetPosition();
+		if (pos.x < -quadWidth / 2) pos.x = -quadWidth / 2;
+		if (pos.x > quadWidth / 2) pos.x = quadWidth / 2;
+		if (pos.z < -quadHeight / 2) pos.z = -quadHeight / 2;
+		if (pos.z > quadHeight / 2) pos.z = quadHeight / 2;
+		masinaModel->SetPosition(pos);
+
+
 	}
 	else if (cameraMode == THIRD_PERSON) {
 		glm::vec3 direction = glm::vec3(0.0f);
