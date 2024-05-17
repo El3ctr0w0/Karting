@@ -639,6 +639,10 @@ int main()
 	spriteShader.use();
 	spriteShader.setInt("spriteTexture", 0);
 
+	Shader wallShader("Shaders/Wall.vs", "Shaders/Wall.fs");
+	wallShader.use();
+	wallShader.setInt("wallTexture", 0);
+
 
 
 	// set up vertex data (and buffer(s)) and configure vertex attributes
@@ -748,7 +752,7 @@ int main()
 	glEnableVertexAttribArray(0);
 
 	//wall
-	float borderWidth = 3.2f; // Width of the wall
+	float borderWidth = -1.0f; // Width of the wall
 	float wallHeight = 6.5f; // Height of the wall
 	float zOffset = 0.0f;
 
@@ -926,11 +930,11 @@ int main()
 
 
 		//wall
-		lightingShader.use();
+		wallShader.use();
 		glm::mat4 wallModel = glm::mat4(1.0f);
-		lightingShader.setMat4("model", wallModel);
-		lightingShader.setMat4("view", pCamera->GetViewMatrix());
-		lightingShader.setMat4("projection", pCamera->GetProjectionMatrix());
+		wallShader.setMat4("model", wallModel);
+		wallShader.setMat4("view", pCamera->GetViewMatrix());
+		wallShader.setMat4("projection", pCamera->GetProjectionMatrix());
 
 		glBindVertexArray(wallVAO);
 		glActiveTexture(GL_TEXTURE0);
@@ -949,7 +953,7 @@ int main()
 		glBindVertexArray(spriteVAO);
 
 		float spriteSpacing = 3.0f; // Space between sprites
-		float spriteHeight = 1.5f; // Height above the floor
+		float spriteHeight = 8.0f; // Height above the floor
 		int numSpritesPerEdge = static_cast<int>(quadWidth / spriteSpacing);
 
 		// Render sprites on the top and bottom edges
