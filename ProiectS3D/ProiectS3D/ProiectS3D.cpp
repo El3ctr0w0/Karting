@@ -22,6 +22,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <vector>
 #include "Shader.h"
 #include "Model.h"
 
@@ -547,6 +548,19 @@ float aspectRatio;
 float quadHeight;
 float quadWidth;
 
+struct SpriteInfo {
+	glm::vec3 position;
+	float rotation;
+	glm::vec3 scale;
+	float height;
+};
+
+struct SpriteCluster {
+	glm::vec3 center;
+	std::vector<SpriteInfo> sprites;
+	int numSprites;
+	float dispersionRadius;
+};
 
 int main()
 {
@@ -689,19 +703,60 @@ int main()
 		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
 		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
 	};
+
+		//sprite stuff
 	float spriteVertices[] = {
-		// positions   // texture coords
+		// Coordonate      // Coordonate textură
 		0.5f,  0.5f,  1.0f, 1.0f, // top right
 		0.5f, -0.5f,  1.0f, 0.0f, // bottom right
 	   -0.5f, -0.5f,  0.0f, 0.0f, // bottom left
-	   -0.5f,  0.5f,  0.0f, 1.0f  // top left
+	   -0.5f,  0.5f,  0.0f, 1.0f  // top left 
 	};
 
 	unsigned int spriteIndices[] = {
-	0, 1, 3, // first triangle
-	1, 2, 3  // second triangle
+		0, 1, 3,   // first Triangle
+		1, 2, 3    // second Triangle
 	};
-	// first, configure the cube's VAO (and VBO)
+	// Definirea unui vector pentru a stoca toate clusterele
+	std::vector<SpriteCluster> grassClusters;
+
+	// Inițializarea generatorului de numere aleatorii
+	srand(static_cast<unsigned int>(time(nullptr)));
+
+	// Crearea și adăugarea clusterurilor
+	// Crearea și adăugarea clusterurilor
+	for (int i = 0; i < 15; ++i) {
+		SpriteCluster cluster;
+		// Generarea coordonatelor centrale în interiorul limitele quadului
+		cluster.center = glm::vec3(
+			((float)rand() / RAND_MAX) * quadWidth - quadWidth / 2, // Coordonată X aleatorie în interiorul quadului
+			1.0f, // Înălțimea fixată la 1.0f
+			((float)rand() / RAND_MAX) * quadHeight - quadHeight / 2 // Coordonată Z aleatorie în interiorul quadului
+		);
+		cluster.numSprites = 10 + rand() % 20; // Număr aleatoriu de sprite-uri între 10 și 30
+		cluster.dispersionRadius = 0.5f + static_cast<float>(rand()) / RAND_MAX * 2.0f; // Raza de dispersie aleatorie între 0.5 și 2.5
+
+		// Generarea sprite-urilor pentru acest cluster
+		for (int j = 0; j < cluster.numSprites; ++j) {
+			float angle = static_cast<float>(rand()) / RAND_MAX * 360.0f;
+			float radius = static_cast<float>(rand()) / RAND_MAX * cluster.dispersionRadius;
+			float x = cluster.center.x + radius * cos(glm::radians(angle));
+			float z = cluster.center.z + radius * sin(glm::radians(angle));
+			float y = 2.0f; // Înălțime fixă
+
+			SpriteInfo sprite;
+			sprite.position = glm::vec3(x, y, z);
+			sprite.rotation = static_cast<float>(rand()) / RAND_MAX * 360.0f;
+			sprite.scale = glm::vec3(5.0f); // Scală fixată
+			sprite.height = 1.0f; // Înălțimea fixată
+
+			cluster.sprites.push_back(sprite);
+		}
+
+		grassClusters.push_back(cluster);
+	}
+
+
 	GLuint spriteVAO, spriteVBO, spriteEBO;
 	glGenVertexArrays(1, &spriteVAO);
 	glGenBuffers(1, &spriteVBO);
@@ -952,60 +1007,21 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, spriteTexture);
 		glBindVertexArray(spriteVAO);
 
-		float spriteSpacing = 3.0f; // Space between sprites
-		float spriteHeight = 8.0f; // Height above the floor
-		int numSpritesPerEdge = static_cast<int>(quadWidth / spriteSpacing);
 
-		// Render sprites on the top and bottom edges
-		for (int i = 0; i <= numSpritesPerEdge; ++i) {
-			float offset = -quadWidth / 2 + i * spriteSpacing;
-
-			for (int j = 0; j < 6; ++j) {
-				float angle = glm::radians(60.0f * j);
-
-				// Top edge
+		for (const auto& cluster : grassClusters) 
+		{
+			for (const auto& sprite : cluster.sprites) {
 				glm::mat4 model = glm::mat4(1.0f);
-				model = glm::translate(model, glm::vec3(offset, spriteHeight, quadHeight / 2));
-				model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
-				model = glm::scale(model, glm::vec3(3.0f));
-				spriteShader.setMat4("model", model);
-				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+				model = glm::translate(model, sprite.position);
+				model = glm::rotate(model, glm::radians(sprite.rotation), glm::vec3(0.0f, 1.0f, 0.0f));
+				model = glm::scale(model, sprite.scale);
 
-				// Bottom edge
-				model = glm::mat4(1.0f);
-				model = glm::translate(model, glm::vec3(offset, spriteHeight, -quadHeight / 2));
-				model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
-				model = glm::scale(model, glm::vec3(3.0f));
 				spriteShader.setMat4("model", model);
+				glBindVertexArray(spriteVAO);
 				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 			}
 		}
 
-		// Render sprites on the left and right edges
-		numSpritesPerEdge = static_cast<int>(quadHeight / spriteSpacing);
-		for (int i = 0; i <= numSpritesPerEdge; ++i) {
-			float offset = -quadHeight / 2 + i * spriteSpacing;
-
-			for (int j = 0; j < 6; ++j) {
-				float angle = glm::radians(60.0f * j);
-
-				// Left edge
-				glm::mat4 model = glm::mat4(1.0f);
-				model = glm::translate(model, glm::vec3(-quadWidth / 2, spriteHeight, offset));
-				model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
-				model = glm::scale(model, glm::vec3(3.0f));
-				spriteShader.setMat4("model", model);
-				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-				// Right edge
-				model = glm::mat4(1.0f);
-				model = glm::translate(model, glm::vec3(quadWidth / 2, spriteHeight, offset));
-				model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
-				model = glm::scale(model, glm::vec3(3.0f));
-				spriteShader.setMat4("model", model);
-				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-			}
-		}
 
 		lightingShader.use();
 		glm::mat4 masinaModelMatrix = masinaModel->GetTransformMatrix();
