@@ -329,6 +329,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 //skybox stuff
 unsigned int cubemapTexture;
 unsigned int skyboxVAO, skyboxVBO;
+
 const float skyboxVertices[] = {
 	// positions
 	-1.0f, 1.0f, -1.0f,
@@ -529,7 +530,7 @@ int main()
 
 
 	// glfw window creation
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Lab 7", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Karting", NULL, NULL);
 	if (window == NULL) {
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
@@ -551,6 +552,11 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 	GLuint floorTexture = loadTexture("Models/Harta.jpg");
+
+	GLuint spriteTexture = loadTexture("Models/spriteTexture.png");
+
+
+
 
 	int width, height, nrChannels;
 	unsigned char* data = stbi_load("Models/Harta.jpg", &width, &height, &nrChannels, 0);
@@ -600,6 +606,10 @@ int main()
 	skyboxShader.use();
 	skyboxShader.setInt("skybox", 0);
 
+	Shader spriteShader("Shaders/sprite.vs", "Shaders/sprite.fs");
+	spriteShader.use();
+	spriteShader.setInt("spriteTexture", 0);
+
 
 
 	// set up vertex data (and buffer(s)) and configure vertex attributes
@@ -646,7 +656,42 @@ int main()
 		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
 		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
 	};
+	float spriteVertices[] = {
+		// positions   // texture coords
+		0.5f,  0.5f,  1.0f, 1.0f, // top right
+		0.5f, -0.5f,  1.0f, 0.0f, // bottom right
+	   -0.5f, -0.5f,  0.0f, 0.0f, // bottom left
+	   -0.5f,  0.5f,  0.0f, 1.0f  // top left
+	};
+
+	unsigned int spriteIndices[] = {
+	0, 1, 3, // first triangle
+	1, 2, 3  // second triangle
+	};
 	// first, configure the cube's VAO (and VBO)
+	GLuint spriteVAO, spriteVBO, spriteEBO;
+	glGenVertexArrays(1, &spriteVAO);
+	glGenBuffers(1, &spriteVBO);
+	glGenBuffers(1, &spriteEBO);
+
+	glBindVertexArray(spriteVAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, spriteVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(spriteVertices), spriteVertices, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, spriteEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(spriteIndices), spriteIndices, GL_STATIC_DRAW);
+
+	// Position attribute
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	// Texture coord attribute
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
 	unsigned int VBO, cubeVAO;
 	glGenVertexArrays(1, &cubeVAO);
 	glGenBuffers(1, &VBO);
@@ -785,6 +830,68 @@ int main()
 		glBindVertexArray(0);
 
 
+		spriteShader.use();
+		spriteShader.setMat4("view", pCamera->GetViewMatrix());
+		spriteShader.setMat4("projection", pCamera->GetProjectionMatrix());
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, spriteTexture);
+		glBindVertexArray(spriteVAO);
+
+		float spriteSpacing = 5.0f; // Space between sprites
+		float spriteHeight = 1.5f; // Height above the floor
+		int numSpritesPerEdge = static_cast<int>(quadWidth / spriteSpacing);
+
+		// Render sprites on the top and bottom edges
+		for (int i = 0; i <= numSpritesPerEdge; ++i) {
+			float offset = -quadWidth / 2 + i * spriteSpacing;
+
+			for (int j = 0; j < 6; ++j) {
+				float angle = glm::radians(60.0f * j);
+
+				// Top edge
+				glm::mat4 model = glm::mat4(1.0f);
+				model = glm::translate(model, glm::vec3(offset, spriteHeight, quadHeight / 2));
+				model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
+				model = glm::scale(model, glm::vec3(3.0f));
+				spriteShader.setMat4("model", model);
+				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+				// Bottom edge
+				model = glm::mat4(1.0f);
+				model = glm::translate(model, glm::vec3(offset, spriteHeight, -quadHeight / 2));
+				model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
+				model = glm::scale(model, glm::vec3(3.0f));
+				spriteShader.setMat4("model", model);
+				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+			}
+		}
+
+		// Render sprites on the left and right edges
+		numSpritesPerEdge = static_cast<int>(quadHeight / spriteSpacing);
+		for (int i = 0; i <= numSpritesPerEdge; ++i) {
+			float offset = -quadHeight / 2 + i * spriteSpacing;
+
+			for (int j = 0; j < 6; ++j) {
+				float angle = glm::radians(60.0f * j);
+
+				// Left edge
+				glm::mat4 model = glm::mat4(1.0f);
+				model = glm::translate(model, glm::vec3(-quadWidth / 2, spriteHeight, offset));
+				model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
+				model = glm::scale(model, glm::vec3(3.0f));
+				spriteShader.setMat4("model", model);
+				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+				// Right edge
+				model = glm::mat4(1.0f);
+				model = glm::translate(model, glm::vec3(quadWidth / 2, spriteHeight, offset));
+				model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
+				model = glm::scale(model, glm::vec3(3.0f));
+				spriteShader.setMat4("model", model);
+				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+			}
+		}
 
 		lightingShader.use();
 		glm::mat4 masinaModelMatrix = masinaModel->GetTransformMatrix();
@@ -808,6 +915,12 @@ int main()
 	glDeleteVertexArrays(1, &cubeVAO);
 	glDeleteVertexArrays(1, &lightVAO);
 	glDeleteBuffers(1, &VBO);
+
+	glDeleteVertexArrays(1, &spriteVAO);
+	glDeleteBuffers(1, &spriteVBO);
+	glDeleteBuffers(1, &spriteEBO);
+	glDeleteTextures(1, &spriteTexture);
+
 
 	// glfw: terminate, clearing all previously allocated GLFW resources
 	glfwTerminate();
