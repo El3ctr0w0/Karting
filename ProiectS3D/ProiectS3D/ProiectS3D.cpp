@@ -555,7 +555,7 @@ int main()
 
 	GLuint spriteTexture = loadTexture("Models/spriteTexture.png");
 
-
+	GLuint wallTexture = loadTexture("Models/wallTexture.jpg"); // Load a wall texture
 
 
 	int width, height, nrChannels;
@@ -718,6 +718,70 @@ int main()
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
+	//wall
+	float borderWidth = 3.2f; // Width of the wall
+	float wallHeight = 6.5f; // Height of the wall
+	float zOffset = 0.0f;
+
+	float wallVertices[] = {
+		// positions              // texture coords
+		// Line 1 - Top
+		-quadWidth / 2 - borderWidth, 0.0f, quadHeight / 2 + borderWidth + zOffset, 0.0f, 0.0f,
+		quadWidth / 2 + borderWidth, 0.0f, quadHeight / 2 + borderWidth + zOffset, 1.0f, 0.0f,
+		-quadWidth / 2 - borderWidth, wallHeight, quadHeight / 2 + borderWidth + zOffset, 0.0f, 1.0f,
+		quadWidth / 2 + borderWidth, wallHeight, quadHeight / 2 + borderWidth + zOffset, 1.0f, 1.0f,
+
+		// Line 2 - Bottom
+		-quadWidth / 2 - borderWidth, 0.0f, -quadHeight / 2 - borderWidth + zOffset, 0.0f, 0.0f,
+		quadWidth / 2 + borderWidth, 0.0f, -quadHeight / 2 - borderWidth + zOffset, 1.0f, 0.0f,
+		-quadWidth / 2 - borderWidth, wallHeight, -quadHeight / 2 - borderWidth + zOffset, 0.0f, 1.0f,
+		quadWidth / 2 + borderWidth, wallHeight, -quadHeight / 2 - borderWidth + zOffset, 1.0f, 1.0f,
+
+		// Line 3 - Left
+		-quadWidth / 2 - borderWidth, 0.0f, -quadHeight / 2 - borderWidth + zOffset, 0.0f, 0.0f,
+		-quadWidth / 2 - borderWidth, 0.0f, quadHeight / 2 + borderWidth + zOffset, 1.0f, 0.0f,
+		-quadWidth / 2 - borderWidth, wallHeight, -quadHeight / 2 - borderWidth + zOffset, 0.0f, 1.0f,
+		-quadWidth / 2 - borderWidth, wallHeight, quadHeight / 2 + borderWidth + zOffset, 1.0f, 1.0f,
+
+		// Line 4 - Right
+		quadWidth / 2 + borderWidth, 0.0f, -quadHeight / 2 - borderWidth + zOffset, 0.0f, 0.0f,
+		quadWidth / 2 + borderWidth, 0.0f, quadHeight / 2 + borderWidth + zOffset, 1.0f, 0.0f,
+		quadWidth / 2 + borderWidth, wallHeight, -quadHeight / 2 - borderWidth + zOffset, 0.0f, 1.0f,
+		quadWidth / 2 + borderWidth, wallHeight, quadHeight / 2 + borderWidth + zOffset, 1.0f, 1.0f
+	};
+
+	unsigned int wallIndices[] = {
+		// Indices for drawing the quads
+		0, 1, 2, 1, 2, 3,       // Top wall
+		4, 5, 6, 5, 6, 7,       // Bottom wall
+		8, 9, 10, 9, 10, 11,    // Left wall
+		12, 13, 14, 13, 14, 15  // Right wall
+	};
+
+	unsigned int wallVAO, wallVBO, wallEBO;
+	glGenVertexArrays(1, &wallVAO);
+	glGenBuffers(1, &wallVBO);
+	glGenBuffers(1, &wallEBO);
+
+	glBindVertexArray(wallVAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, wallVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(wallVertices), wallVertices, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, wallEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(wallIndices), wallIndices, GL_STATIC_DRAW);
+
+	// Position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	// Texture coordinate attribute
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	glBindVertexArray(0);
+
+	//wall
+
 	// Create camera
 	pCamera = new Camera(SCR_WIDTH, SCR_HEIGHT, glm::vec3(0.0, 0.0, 3.0));
 
@@ -830,6 +894,21 @@ int main()
 		glBindVertexArray(0);
 
 
+		//wall
+		lightingShader.use();
+		glm::mat4 wallModel = glm::mat4(1.0f);
+		lightingShader.setMat4("model", wallModel);
+		lightingShader.setMat4("view", pCamera->GetViewMatrix());
+		lightingShader.setMat4("projection", pCamera->GetProjectionMatrix());
+
+		glBindVertexArray(wallVAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, wallTexture);
+		glDrawElements(GL_TRIANGLES, 24, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+		
+
+		//sprite
 		spriteShader.use();
 		spriteShader.setMat4("view", pCamera->GetViewMatrix());
 		spriteShader.setMat4("projection", pCamera->GetProjectionMatrix());
@@ -838,7 +917,7 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, spriteTexture);
 		glBindVertexArray(spriteVAO);
 
-		float spriteSpacing = 5.0f; // Space between sprites
+		float spriteSpacing = 3.0f; // Space between sprites
 		float spriteHeight = 1.5f; // Height above the floor
 		int numSpritesPerEdge = static_cast<int>(quadWidth / spriteSpacing);
 
