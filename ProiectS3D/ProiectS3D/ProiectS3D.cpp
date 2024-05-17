@@ -292,6 +292,7 @@ protected:
 
 GLuint ProjMatrixLocation, ViewMatrixLocation, WorldMatrixLocation;
 Model* masinaModel = nullptr;
+Model* rotiModel = nullptr;
 Model* raceTrackModel = nullptr;
 Camera* pCamera = nullptr;
 
@@ -299,6 +300,7 @@ void Cleanup()
 {
 	delete pCamera;
 	delete masinaModel;
+	delete rotiModel;
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -512,6 +514,33 @@ GLuint loadTexture(char const* path)
 
 	return textureID;
 }
+
+glm::vec3 WORLD_UP(1.0f, 0.0f, 0.0f);
+
+void renderWheelsOnTrack(Model& model, Shader& shader)
+{
+	// view transition
+	glm::mat4 viewMatrix = pCamera->GetViewMatrix();
+	shader.setMat4("view", viewMatrix);
+
+	// model conversion
+	glm::mat4 modelMatrix = glm::mat4(1.0f);
+
+	// Apply rotation first if necessary
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(-270.0f), WORLD_UP);
+
+	// Apply translation
+	modelMatrix = glm::translate(modelMatrix, glm::vec3(-10.0f, 0.0f, 0.0f));
+
+	shader.setMat4("model", modelMatrix);
+
+	// projection transformation
+	glm::mat4 projMatrix = pCamera->GetProjMatrix((float)SCREEN_WIDTH / (float)SCREEN_HEIGHT);
+	shader.setMat4("projection", projMatrix);
+
+	model.Draw(shader);
+}
+
 
 float scaleFactor;
 float aspectRatio;
@@ -786,6 +815,7 @@ int main()
 
 
 	masinaModel = new Model(currentPath + "\\Models\\F1LowPoly.obj", false);
+	rotiModel = new Model(currentPath + "\\Models\\roti.obj", false);
 
 	// render loop
 	while (!glfwWindowShouldClose(window)) {
@@ -812,6 +842,7 @@ int main()
 		lightingShader.setMat4("projection", pCamera->GetProjectionMatrix());
 		lightingShader.setMat4("view", pCamera->GetViewMatrix());
 
+		renderWheelsOnTrack(*rotiModel, lightingShader);
 
 		floorShader.use();
 		floorShader.setInt("texture1", 0);
