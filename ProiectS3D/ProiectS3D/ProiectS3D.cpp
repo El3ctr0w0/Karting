@@ -105,8 +105,8 @@ public:
 	void Set(const int width, const int height, const glm::vec3& position)
 	{
 		this->isPerspective = true;
-		this->yaw = YAW;
-		this->pitch = PITCH;
+		this->yaw = -90.0f;
+		this->pitch = -10.0f;
 
 		this->FoVy = FOV;
 		this->width = width;
@@ -115,7 +115,7 @@ public:
 		this->zFar = zFAR;
 
 		this->worldUp = glm::vec3(0, 1, 0);
-		this->position = position;
+		this->position = position + glm::vec3(0,50.0f,0);
 
 		lastX = width / 2.0f;
 		lastY = height / 2.0f;
@@ -266,7 +266,7 @@ private:
 	}
 
 protected:
-	const float cameraSpeedFactor = 5.5f;
+	const float cameraSpeedFactor = 15.5f;
 	const float mouseSensitivity = 1.0f;
 
 	// Perspective properties
@@ -723,7 +723,6 @@ int main()
 	// Inițializarea generatorului de numere aleatorii
 	srand(static_cast<unsigned int>(time(nullptr)));
 
-	// Crearea și adăugarea clusterurilor
 	// Crearea și adăugarea clusterurilor
 	for (int i = 0; i < 15; ++i) {
 		SpriteCluster cluster;
