@@ -520,26 +520,43 @@ glm::vec3 WORLD_UP(1.0f, 0.0f, 0.0f);
 
 void renderWheelsOnTrack(Model& model, Shader& shader)
 {
-	// view transition
+	// View and projection matrices
 	glm::mat4 viewMatrix = pCamera->GetViewMatrix();
 	shader.setMat4("view", viewMatrix);
 
-	// model conversion
-	glm::mat4 modelMatrix = glm::mat4(1.0f);
-
-	// Apply rotation first if necessary
-	modelMatrix = glm::rotate(modelMatrix, glm::radians(-270.0f), WORLD_UP);
-
-	// Apply translation
-	modelMatrix = glm::translate(modelMatrix, glm::vec3(-10.0f, 0.0f, 0.0f));
-
-	shader.setMat4("model", modelMatrix);
-
-	// projection transformation
 	glm::mat4 projMatrix = pCamera->GetProjMatrix((float)SCREEN_WIDTH / (float)SCREEN_HEIGHT);
 	shader.setMat4("projection", projMatrix);
 
-	model.Draw(shader);
+	// Define the positions for the three wheels
+	std::vector<glm::vec3> wheelPositions = {
+		glm::vec3(-10.0f, 0.0f, 0.0f),
+		glm::vec3(10.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 10.0f)
+	};
+
+	// Define the scaling factor
+	glm::vec3 scalingFactor = glm::vec3(5.0f); // Adjust this value to make the wheels bigger
+
+	for (const auto& position : wheelPositions)
+	{
+		// Model transformation
+		glm::mat4 modelMatrix = glm::mat4(1.0f);
+
+		// Apply scaling
+		modelMatrix = glm::scale(modelMatrix, scalingFactor);
+
+		// Apply rotation (if necessary)
+		modelMatrix = glm::rotate(modelMatrix, glm::radians(-270.0f), WORLD_UP);
+
+		// Apply translation
+		modelMatrix = glm::translate(modelMatrix, position);
+
+		// Set the model matrix in the shader
+		shader.setMat4("model", modelMatrix);
+
+		// Draw the model
+		model.Draw(shader);
+	}
 }
 
 
