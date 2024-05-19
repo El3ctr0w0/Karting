@@ -530,12 +530,12 @@ void renderWheelsOnTrack(Model& model, Shader& shader)
 	// Define the positions for the three wheels
 	std::vector<glm::vec3> wheelPositions = {
 		glm::vec3(-10.0f, 0.0f, -0.5f),
-		glm::vec3(10.0f, 0.0f, -0.5f),
-		glm::vec3(0.0f, 10.0f, -0.5f)
+		glm::vec3(10.0f, 0.0f, 5.0f),
+		glm::vec3(15.0f, 0.0f, -0.5f)
 	};
 
 	// Define the scaling factor
-	glm::vec3 scalingFactor = glm::vec3(5.0f); // Adjust this value to make the wheels bigger
+	glm::vec3 scalingFactor = glm::vec3(10.0f); // Adjust this value to make the wheels bigger
 
 	for (const auto& position : wheelPositions)
 	{
@@ -546,7 +546,7 @@ void renderWheelsOnTrack(Model& model, Shader& shader)
 		modelMatrix = glm::scale(modelMatrix, scalingFactor);
 
 		// Apply rotation (if necessary)
-		modelMatrix = glm::rotate(modelMatrix, glm::radians(-90.0f), WORLD_UP);
+		modelMatrix = glm::rotate(modelMatrix, glm::radians(0.0f), WORLD_UP);
 
 		// Apply translation
 		modelMatrix = glm::translate(modelMatrix, position);
