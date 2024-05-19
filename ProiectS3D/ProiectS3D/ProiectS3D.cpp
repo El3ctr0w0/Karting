@@ -1123,8 +1123,8 @@ void processInput(GLFWwindow* window)
 
 		// Verifică și restricționează poziția
 		glm::vec3 pos = masinaModel->GetPosition();
-		float limitX = quadWidth / 2 - 100;
-		float limitZ = quadHeight / 2 - 100;
+		float limitX = quadWidth / 2 - 8;
+		float limitZ = quadHeight / 2 - 8;
 
 		if (pos.x < -limitX) pos.x = -limitX;
 		if (pos.x > limitX) pos.x = limitX;
