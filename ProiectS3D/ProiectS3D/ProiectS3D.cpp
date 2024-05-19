@@ -84,10 +84,7 @@ public:
 		float rotationRadians = glm::radians(targetRotation.y + 180.0f); // Rotație cu 180 grade pentru a privi în față
 		glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), rotationRadians, glm::vec3(0.0f, 1.0f, 0.0f));
 
-		glm::vec3 forward = glm::vec3(0.0f, 0.0f, 1.0f);
-
-		glm::vec3 forwardPosition = rotationMatrix * glm::vec4(forward * glm::length(offset), 0.0f);
-
+	
 		position = targetPosition;
 		position.y += 3.3;
 
