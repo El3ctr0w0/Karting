@@ -89,7 +89,7 @@ public:
 		glm::vec3 forwardPosition = rotationMatrix * glm::vec4(forward * glm::length(offset), 0.0f);
 
 		position = targetPosition;
-		position.y += offset.y;
+		position.y += 3.3;
 
 		yaw = targetRotation.y + 90.0f;
 		//pitch = -targetRotation.x;

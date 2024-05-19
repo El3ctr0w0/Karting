@@ -1,55 +1,136 @@
-#version 330 core
+#version 330
 
-struct Material {
-    float shininess;
-};
-struct Light {
-    vec3 direction;
-    vec3 ambient;
+in vec4 vertex;
+in vec3 normal;
+in vec2 st;
+in vec4 shadowCoord;
+
+layout(location = 0) out vec4 fragColour;
+
+uniform sampler2D texMap;
+uniform samplerCube cubeMap;
+uniform sampler2DShadow shadowMap;
+
+uniform mat4 projection;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 inv_view;
+
+#define MAX_LIGHTS 10
+uniform int num_lights;
+uniform struct Light {
+    vec4 position;
     vec3 diffuse;
     vec3 specular;
-};
+    vec3 ambient;
+    float radius;
+    float coneAngle;
+    vec3 coneDirection;
+} lights[MAX_LIGHTS];
 
-out vec4 FragColor;
+uniform vec3 mtl_ambient;
+uniform vec3 mtl_diffuse;
+uniform vec3 mtl_specular;
+uniform vec3 emission;
 
-in vec2 TexCoords;
-in vec3 Normal;
-in vec3 FragPos;
+uniform float shininess;
+uniform int render_shadows;
 
-uniform sampler2D texture_diffuse1;
-uniform sampler2D texture_specular1;
-uniform samplerCube skybox;
-uniform vec3 viewPos;
-uniform Material material;
-uniform Light light;
+uniform bool use_mtl = false;
+uniform float fog_density = 0.02;
 
-const float envBias = 1.0f;
-const float envShininess = 32.0f;
+vec2 poissonDisk[16] = vec2[]( 
+   vec2( -0.94201624, -0.39906216 ), 
+   vec2( 0.94558609, -0.76890725 ), 
+   vec2( -0.094184101, -0.92938870 ), 
+   vec2( 0.34495938, 0.29387760 ), 
+   vec2( -0.91588581, 0.45771432 ), 
+   vec2( -0.81544232, -0.87912464 ), 
+   vec2( -0.38277543, 0.27676845 ), 
+   vec2( 0.97484398, 0.75648379 ), 
+   vec2( 0.44323325, -0.97511554 ), 
+   vec2( 0.53742981, -0.47373420 ), 
+   vec2( -0.26496911, -0.41893023 ), 
+   vec2( 0.79197514, 0.19090188 ), 
+   vec2( -0.24188840, 0.99706507 ), 
+   vec2( -0.81409955, 0.91437590 ), 
+   vec2( 0.19984126, 0.78641367 ), 
+   vec2( 0.14383161, -0.14100790 ) 
+);
 
-void main()
-{
-    // Ambient
-    vec3 ambient = light.ambient * texture(texture_diffuse1, TexCoords).rgb;
+float random(vec3 seed, int i) {
+    vec4 seed4 = vec4(seed, i);
+    float dot_product = dot(seed4, vec4(12.9898, 78.233, 45.164, 94.673));
+    return fract(sin(dot_product) * 43758.5453);
+}
 
-    // Diffuse
-    vec3 norm = normalize(Normal);
-    vec3 lightDir = normalize(-light.direction);
-    float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = light.diffuse * diff * texture(texture_diffuse1, TexCoords).rgb;
+vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec4 vertex_world, vec4 vertex_view) {
+    vec3 light_surface_dir;
+    float attenuation = 1.0;
 
-    // Specular
-    vec3 viewDir = normalize(viewPos - FragPos);
-    vec3 reflectDir = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-    vec3 specular = light.specular * spec * texture(texture_specular1, TexCoords).rgb;
+    if(light.position.w == 0.0) {
+        light_surface_dir = normalize(light.position.xyz);
+        attenuation = 1.0;
+    } else {
+        light_surface_dir = normalize(vec3(light.position - vertex_world));
+        float distanceToLight = length(vec3(light.position - vertex_world));
+        attenuation = clamp(1.0 - distanceToLight * distanceToLight / (light.radius * light.radius), 0.0, 1.0);
 
-    // Shading
-    vec3 result = ambient + diffuse + specular;
-    result = clamp(result, 0.0, 1.0);
+        float lightToSurfaceAngle = acos(dot(-light_surface_dir, normalize(light.coneDirection)));
+        if(lightToSurfaceAngle > light.coneAngle) {
+            attenuation = 0.0;
+        }
+    }
 
-    // Environment mapping
-    reflectDir = reflect(-viewDir, norm);
-    vec3 reflected = texture(skybox, reflectDir).rgb * texture(texture_specular1, TexCoords).rgb;
+    vec3 ambient = surfaceColor.rgb * light.ambient;
+    float sDotN = max(0.0, dot(normal, light_surface_dir));
+    vec3 diffuse = sDotN * surfaceColor.rgb * light.diffuse;
 
-    FragColor = vec4(result + envBias*reflected + pow(reflected, vec3(envShininess)), 1.0);
+    vec3 normal_view = normalize(mat3(view) * normal);
+    vec3 view_dir = normalize(-vertex_view.xyz);
+    vec3 light_surface_view_dir = normalize(vec3(view * light.position - vertex_view));
+
+    vec3 halfDir = normalize(light_surface_view_dir + view_dir);
+    float specAngle = max(dot(halfDir, normal_view), 0.0);
+
+    vec3 reflection = reflect(view_dir, normal_view);
+    vec3 r_world = vec3(inv_view * vec4(reflection, 0.0));
+    vec3 specular = mtl_diffuse * texture(cubeMap, -r_world).rgb * light.specular * pow(specAngle, shininess);
+
+    return emission + ambient + attenuation * (diffuse + specular);
+}
+
+vec3 applyFog(vec3 rgb, float distance) {
+    float fogAmount = 1.0 - exp(-distance * fog_density);
+    vec3 fogColor = vec3(0.5, 0.6, 0.7);
+    return mix(rgb, fogColor, fogAmount);
+}
+
+void main(void) {
+    vec4 vertex_view = view * vertex;
+    vec3 lit_colour = vec3(0);
+    float texture_alpha = texture(texMap, st).a;
+
+    if(texture_alpha < 0.1) {
+        discard;
+    }
+
+    float visibility = 1.0;
+    if(render_shadows == 1) {
+        int num_passes = 8;
+        for (int i = 0; i < num_passes; i++) {
+            vec3 current = vec3(shadowCoord.xy + poissonDisk[i] / 750.0, shadowCoord.z);
+            if (texture(shadowMap, current) < 0.5) {
+                visibility -= 0.5 / num_passes;
+            }
+        }
+    }
+
+    for(int i = 0; i < num_lights; ++i) {
+        lit_colour += ApplyLight(lights[i], vec3(texture(texMap, st)), normal, vertex, vertex_view);
+    }
+
+    lit_colour *= visibility;
+    //lit_colour = applyFog(lit_colour, -vertex_view.z);
+    fragColour = vec4(lit_colour, texture_alpha);
 }
