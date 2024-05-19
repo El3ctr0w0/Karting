@@ -31,8 +31,8 @@
 #pragma comment (lib, "OpenGL32.lib")
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1920;
+const unsigned int SCR_HEIGHT = 1080;
 const unsigned int SCREEN_WIDTH = 800;
 const unsigned int SCREEN_HEIGHT = 600;
 
@@ -1123,10 +1123,14 @@ void processInput(GLFWwindow* window)
 
 		// Verifică și restricționează poziția
 		glm::vec3 pos = masinaModel->GetPosition();
-		if (pos.x < -quadWidth / 2) pos.x = -quadWidth / 2;
-		if (pos.x > quadWidth / 2) pos.x = quadWidth / 2;
-		if (pos.z < -quadHeight / 2) pos.z = -quadHeight / 2;
-		if (pos.z > quadHeight / 2) pos.z = quadHeight / 2;
+		float limitX = quadWidth / 2 - 100;
+		float limitZ = quadHeight / 2 - 100;
+
+		if (pos.x < -limitX) pos.x = -limitX;
+		if (pos.x > limitX) pos.x = limitX;
+		if (pos.z < -limitZ) pos.z = -limitZ;
+		if (pos.z > limitZ) pos.z = limitZ;
+
 		masinaModel->SetPosition(pos);
 
 
@@ -1149,10 +1153,14 @@ void processInput(GLFWwindow* window)
 
 		// Verifică și restricționează poziția
 		glm::vec3 pos = masinaModel->GetPosition();
-		if (pos.x < -quadWidth / 2) pos.x = -quadWidth / 2;
-		if (pos.x > quadWidth / 2) pos.x = quadWidth / 2;
-		if (pos.z < -quadHeight / 2) pos.z = -quadHeight / 2;
-		if (pos.z > quadHeight / 2) pos.z = quadHeight / 2;
+		float limitX = quadWidth / 2 - 8;
+		float limitZ = quadHeight / 2 - 8;
+
+		if (pos.x < -limitX) pos.x = -limitX;
+		if (pos.x > limitX) pos.x = limitX;
+		if (pos.z < -limitZ) pos.z = -limitZ;
+		if (pos.z > limitZ) pos.z = limitZ;
+
 		masinaModel->SetPosition(pos);
 
 		pCamera->LockToTarget(masinaModel->GetPosition(), -masinaModel->Rotation);
